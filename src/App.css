@@ -1,0 +1,14 @@
+.itemToSelect:hover {
+    border: 2px solid rgb(2, 95, 255);
+    cursor: pointer;
+    transition: all ease-in;
+    transition-duration: 100ms;
+}
+
+.itemToSelectSelected {
+    border: 2px solid rgb(2, 95, 255);
+}
+
+.balanceToHover:hover {
+    border-bottom:'2px solid blue'
+}
