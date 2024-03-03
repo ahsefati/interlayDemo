@@ -20,6 +20,10 @@ To start the project in your localhost and exploring the tools, follow the steps
 
 ```git clone https://github.com/ahsefati/interlayDemo.git```
 
+- Change your directory
+
+```cd interlayDemo```
+
 - Install dependencies
 
 ```yarn insatll```
