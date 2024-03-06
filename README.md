@@ -1,30 +1,37 @@
-# React + TypeScript + Vite
+# Interlay Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Codes in this repo represents the demo implmented for Interlay Network team.
 
-Currently, two official plugins are available:
+Currently, the following features are implemented from scratch using Polkadot-JS modules:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Connect a Para Chain (Interlay for now)
+- Connect to a Wallet (Talisman has been tested)
+- Choose Your Account
+- Validate the Account Compatibility with the Para Chain
+- View the Free/Reserved/Frozen Balances (for all the available assets)
+- Create a Transaction (Send tokens)
+- See the Transaction Status Step-by-Step
 
-## Expanding the ESLint configuration
+## Install and Run
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+To start the project in your localhost and exploring the tools, follow the steps below:
 
-- Configure the top-level `parserOptions` property like this:
+- Clone the repository
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+```git clone https://github.com/ahsefati/interlayDemo.git```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+- Change your directory
+
+```cd interlayDemo```
+
+- Install dependencies
+
+```yarn insatll```
+
+- Start the environment
+
+```yarn dev```
+
+## Notes
+- To work with the app, you should have at least one wallet. I recommend using Talisman for testing purposes.
+- This proejct is using Testnet and Tokens have no real value. Please DO NOT use your real tokens such as Mainnet BTC in this project!
