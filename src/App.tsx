@@ -1,6 +1,7 @@
 import {WsProvider, ApiPromise} from '@polkadot/api'
 import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp'
 import { InjectedAccountWithMeta, InjectedExtension, } from '@polkadot/extension-inject/types'
+import { AnyJson } from '@polkadot/types/types';
 import {useEffect, useState } from 'react'
 import logo from './assets/images/logo.webp'
 import interlay from './assets/images/inetrlay.png'
@@ -11,7 +12,7 @@ import transactionStepsData from './assets/data/transactionSteps'
 
 import './App.css'
 import { DeploymentUnitOutlined, AppstoreAddOutlined , CreditCardOutlined, ApiOutlined, DollarOutlined, SwapOutlined, SecurityScanOutlined, LoadingOutlined, QuestionCircleOutlined, CheckCircleOutlined, CloseCircleOutlined} from '@ant-design/icons'
-import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, InputNumber } from 'antd'
+import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, InputNumber, Spin } from 'antd'
 const { Meta } = Card
 
 const NAME = "AHSTEST"
@@ -30,7 +31,7 @@ const App = () => {
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedRPCId, setSelectedRPCId] = useState<number>(1000)
   const [connectedWallet, setConnectedWallet] = useState<InjectedExtension[]>()
-  const [selectedAddress, setSelectedAddress] = useState<string>("choose")
+  const [selectedAddress, setSelectedAddress] = useState<any>("choose")
   const [errorNoNext, setErrorNoNext] = useState('')
 
   const [api, setApi] = useState<ApiPromise>()
@@ -40,10 +41,17 @@ const App = () => {
   // Available Assets (filled when parachain is choosen)
   const [availableAssets, setAvailableAssets] = useState<any>({})
   // Balances
-  const [userBalances, setUserBalances] = useState<any[]>([])
+  const [userTokenBalances, setUserTokenBalances] = useState<any[]>([])
+  const [userForeignAssetBalances, setUserForeignAssetBalances] = useState<any[]>([])
+  
   // Send token
-  const [tokenToSend, setTokenToSend] = useState('choose')
+  const [tokenToSend, setTokenToSend] = useState<any>('choose')
+  const [isToken, setIsToken] = useState(true)
+  const [isFeeWithToken, setIsFeeWithToken] = useState(true)
   const [selectedTokenBalance, setSelectedTokenBalance] = useState<any>()
+  const [estimatedFee, setEstimatedFee] = useState<any>()
+  const [tokenToPayFees, setTokenToPayFees] = useState<any>('INTR')
+  const [selectedTokenToPayFeesBalance, setSelectedTokenToPayFeesBalance] = useState<any>()
   const [amountToSend, setAmountToSend] = useState(0)
   const [addressToSend, setAddressToSend] = useState('')
   // Transaction
@@ -129,7 +137,22 @@ const App = () => {
 
   const handleGetBalances = async () => {
     if (!api) return
+    // Get all the available foreign assets:
     try {
+      const foreignAssets = await api.query.assetRegistry.metadata.entries()
+      let _foreignAssets:any[] = []
+      foreignAssets.forEach(async ([key, value]) => {
+        const assetId = key.args[0].toString()
+        const assetInfo = await api.query.tokens.accounts(selectedAccount?.address, {ForeignAsset: assetId})
+        const assetInfoJSON:any = assetInfo.toJSON()
+        const metadata:any = value.toHuman()
+        metadata["free"] = assetInfoJSON?.free
+        metadata["reserved"] = assetInfoJSON?.reserved
+        metadata["frozen"] = assetInfoJSON?.frozen
+        metadata["assetId"] = assetId
+        _foreignAssets.push(metadata)
+      });
+      setUserForeignAssetBalances(_foreignAssets)
       let index = 0
       const balancesPromises = availableAssets?.tokenSymbol.map(async (token: string) => {
         const data:any = await api.query.tokens.accounts(selectedAccount?.address, { Token: token })
@@ -139,10 +162,74 @@ const App = () => {
       })
   
       const balances = await Promise.all(balancesPromises || [])
-      console.log(balances)
-      setUserBalances([...balances])
+      setUserTokenBalances([...balances])
     } catch (error) {
       console.error("Error fetching balances:", error)
+    }
+  }
+
+  const handleEstimateFees = async () => {
+    const SENDER = '' + selectedAccount?.address.toString()
+    const injector = await web3FromAddress(SENDER)
+    const amountToSendMain = amountToSend * Math.pow(10,selectedTokenBalance.decimals)
+    if (isToken){
+      if (isFeeWithToken){
+        const info = await api?.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain)
+                      .paymentInfo(SENDER, { signer: injector.signer })
+        console.log(`
+          class=${info?.class.toString()},
+          weight=${info?.weight.toString()},
+          partialFee=${info?.partialFee.toHuman()}
+        `);
+        console.log()
+        setEstimatedFee(info?.partialFee.toHuman())
+        
+      }else{
+        const info = await api?.tx.multiTransactionPayment.withFeeSwapPath(
+          [
+            {ForeignAsset: parseInt(tokenToPayFees)}, // paying with USDT
+            {Token: 'INTR'} // swapping to INTR
+          ],
+          1, // max amount of USDT to swap
+          // transferring DOT on Interlay and paying tx fees in USDT
+          api.tx.tokens.transfer(addressToSend, {Token: tokenToSend}, amountToSendMain)
+        ).paymentInfo(SENDER, { signer: injector.signer })
+        console.log(`
+          class=${info?.class.toString()},
+          weight=${info?.weight.toString()},
+          partialFee=${info?.partialFee.toHuman()}
+        `);
+        setEstimatedFee(info?.partialFee.toHuman())
+      }
+
+    }else{
+      if (isFeeWithToken){
+        const info = await api?.tx.tokens.transfer(addressToSend, { ForeignAsset: tokenToSend }, amountToSendMain)
+                      .paymentInfo(SENDER, { signer: injector.signer })
+        console.log(`
+          class=${info?.class.toString()},
+          weight=${info?.weight.toString()},
+          partialFee=${info?.partialFee.toHuman()}
+        `);
+  
+        setEstimatedFee(info?.partialFee.toHuman())
+      }else{
+        const info = await api?.tx.multiTransactionPayment.withFeeSwapPath(
+          [
+            {ForeignAsset: parseInt(tokenToPayFees)}, // paying with USDT
+            {Token: 'INTR'} // swapping to INTR
+          ],
+          1, // max amount of USDT to swap
+          // transferring DOT on Interlay and paying tx fees in USDT
+          api.tx.tokens.transfer(addressToSend, { ForeignAsset: tokenToSend }, amountToSendMain)
+        ).paymentInfo(SENDER, { signer: injector.signer })
+        console.log(`
+          class=${info?.class.toString()},
+          weight=${info?.weight.toString()},
+          partialFee=${info?.partialFee.toHuman()}
+        `);
+        setEstimatedFee(info?.partialFee.toHuman())
+      }
     }
   }
 
@@ -152,9 +239,52 @@ const App = () => {
     const SENDER = '' + selectedAccount?.address.toString()
     const injector = await web3FromAddress(SENDER)
     const amountToSendMain = amountToSend * Math.pow(10,selectedTokenBalance.decimals)
-    // const len = api?.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain).length
-    const result = await api?.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain)
-                  .signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+
+    // Pay fees with another token (OK!) -> Transfer funds thorugh tokens or foreign assets
+    // if (isToken && is){}
+    // api?.tx.multiTransactionPayment.withFeeSwapPath(
+    //   [
+    //     {ForeignAsset: 2}, // paying with USDT
+    //     {Token: 'INTR'} // swapping to INTR
+    //   ],
+    //   412, // amount of USDT to swap
+    //    // transferring DOT on Interlay and paying tx fees in USDT
+    //   api.tx.tokens.transfer(addressToSend, {Token: tokenToSend}, amountToSendMain)
+    // ).signAndSend(SENDER, { signer: injector.signer })
+
+    // Guess the Fee when another token is used (It needs to access the pools for getting the swapping rate!)
+
+    if (isToken){
+      if(isFeeWithToken){
+        const _ = await api?.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain)
+                      .signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+      }else{
+        const _ = await api?.tx.multiTransactionPayment.withFeeSwapPath(
+          [
+            {ForeignAsset: parseInt(tokenToPayFees)}, // paying with USDT
+            {Token: 'INTR'} // swapping to INTR
+          ],
+          412, // max amount of USDT to swap
+          // transferring DOT on Interlay and paying tx fees in USDT
+          api.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain)
+        ).signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+      }
+    }else{
+      if (isFeeWithToken){
+        const _ = await api?.tx.tokens.transfer(addressToSend, { ForeignAsset: tokenToSend }, amountToSendMain)
+                      .signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+      }else{
+        const _ = await api?.tx.multiTransactionPayment.withFeeSwapPath(
+          [
+            {ForeignAsset: parseInt(tokenToPayFees)}, // paying with USDT
+            {Token: 'INTR'} // swapping to INTR
+          ],
+          412, // max amount of USDT to swap
+          // transferring DOT on Interlay and paying tx fees in USDT
+          api.tx.tokens.transfer(addressToSend, { ForeignAsset: tokenToSend}, amountToSendMain)
+        ).signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+      }
+    }
 
   }
   const handleTransactionStatus = async () => {
@@ -192,12 +322,35 @@ const App = () => {
           }
         }
       }
+      if (transactionResult.events.length === 8){
+        if (transactionResult.events[7]?.event?.method === "ExtrinsicSuccess"){
+          if (transactionSuccess!==1){
+            setCurrentTransactionStep(3)
+            await delay(2500)
+            setCurrentTransactionStep(4)
+            await delay(2500)
+            setCurrentTransactionStep(5)
+            setTransactionSuccess(1)
+          }
+        }
+      }
     }
   }
 
   useEffect(()=>{
     handleTransactionStatus()
   }, [transactionResult])
+
+  useEffect(()=>{
+    if (isToken){
+      setSelectedTokenBalance(userTokenBalances.filter(userbalance=>userbalance.token===tokenToSend)[0])
+    }else{
+      setSelectedTokenBalance(userForeignAssetBalances.filter(userbalance=>userbalance.assetId===tokenToSend)[0])
+    }
+    if (amountToSend){
+      handleEstimateFees()
+    }
+  },[isToken, tokenToSend, tokenToPayFees, amountToSend, isFeeWithToken])
 
   // STEP 1
   const step1 = 
@@ -395,32 +548,62 @@ const App = () => {
             OK
           </Button>,
         ]}
+        style={{maxWidth:'fit-content'}}
         onOk={() => setModalBalance(false)}
         onCancel={() => setModalBalance(false)}
       >
-        <Row justify={'space-evenly'} style={{marginTop:'28px'}}>
-          {userBalances.map(userBalance=>{
-            return(
-              <Col key={userBalance.token} className='balanceToHover' style={{marginBottom:'18px'}} span={10}>
-                <Row justify={'space-around'} align={'top'}>
-                  <Col span={6}>
-                    <Image preview={false} src={"/src/assets/images/"+userBalance.token+".png"} style={{borderRadius:'50%'}} height={'40px'} width={'40px'}/>
-                  </Col>
-                  <Col span={16}>
-                    <h3 style={{marginBottom:'-16px', marginTop:'-0px'}}>{userBalance.token}</h3>
-                    <h5>
-                        Free: {(Number(userBalance.free)/Math.pow(10,userBalance.decimals)).toFixed(4) || 0}
-                        <br/>
-                        Reserved: {(Number(userBalance.reserved)/Math.pow(10,userBalance.decimals)).toFixed(4) || 0}
-                        <br/>
-                        Frozen: {(Number(userBalance.frozen)/Math.pow(10,userBalance.decimals)).toFixed(4) || 0}
-                    </h5>
-                  </Col>
-                </Row>
-              </Col>
-            )
-          })}
-        </Row>
+        {userTokenBalances.length>0 && userForeignAssetBalances.length>0 ?
+          <Row justify={'start'} style={{marginTop:'28px'}}>
+            {userTokenBalances.map(userBalance=>{
+              return(
+                <Col key={userBalance.token} className='balanceToHover' style={{marginBottom:'18px'}} span={12}>
+                  <Row justify={'space-between'} align={'top'}>
+                    <Col span={2}>
+                      <Image preview={false} src={"/src/assets/images/"+userBalance.token+".png"} style={{borderRadius:'50%'}} height={'60px'} width={'60px'}/>
+                    </Col>
+                    <Col span={16} style={{marginLeft:'12px'}}>
+                      <h2 style={{marginBottom:'-16px', marginTop:'-5px'}}>{userBalance.token}</h2>
+                      <h4>
+                          Free: {(Number(userBalance.free)/Math.pow(10,userBalance.decimals)).toFixed(4) || 0}
+                          <br/>
+                          Reserved: {(Number(userBalance.reserved)/Math.pow(10,userBalance.decimals)).toFixed(4) || 0}
+                          <br/>
+                          Frozen: {(Number(userBalance.frozen)/Math.pow(10,userBalance.decimals)).toFixed(4) || 0}
+                      </h4>
+                    </Col>
+                  </Row>
+                </Col>
+              )
+            })}
+            {
+            userForeignAssetBalances.map(userFABalance=>{
+              return(
+                <Col key={userFABalance.assetId} className='balanceToHover' style={{marginBottom:'18px'}} span={12}>
+                  <Row justify={'space-between'} align={'top'}>
+                    <Col span={2}>
+                      <Image preview={false} src={"/src/assets/images/"+userFABalance.symbol+".png"} style={{borderRadius:'50%'}} height={'60px'} width={'60px'}/>
+                    </Col>
+                    <Col span={16} style={{marginLeft:'12px'}}>
+                      <h2 style={{marginBottom:'-16px', marginTop:'-5px'}}>{userFABalance.symbol}</h2>
+                      <h4>
+                          Free: {(Number(userFABalance.free)/Math.pow(10,userFABalance.decimals)).toFixed(4) || 0}
+                          <br/>
+                          Reserved: {(Number(userFABalance.reserved)/Math.pow(10,userFABalance.decimals)).toFixed(4) || 0}
+                          <br/>
+                          Frozen: {(Number(userFABalance.frozen)/Math.pow(10,userFABalance.decimals)).toFixed(4) || 0}
+                      </h4>
+                    </Col>
+                  </Row>
+                </Col>
+              )
+            })
+            }
+          </Row>
+          :
+          <Row justify={'center'} style={{padding:'36px 52px 36px 52px'}}>
+            <Spin size='large'/>
+          </Row>
+        }
       </Modal>
 
       {/* Transfer Modal */}
@@ -444,13 +627,12 @@ const App = () => {
                 value={tokenToSend} 
                 onChange={(value)=>{
                   setTokenToSend(value)
-                  setSelectedTokenBalance(userBalances.filter(userbalance=>userbalance.token===value)[0])
                 }}>
                 <Select.Option value="choose">Choose Token</Select.Option>
                 {availableAssets && availableAssets?.tokenSymbol?.map((token:string)=>{
                   return (
                     <Select.Option key={token} value={token}>
-                      <Row justify={'space-between'} align={'middle'}>
+                      <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsToken(true)}}>
                         <Col span={6}>
                           <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+token+".png"}/>
                         </Col>
@@ -460,33 +642,83 @@ const App = () => {
                       </Row>
                     </Select.Option>
                   )
-                }
+                  }
+                )}
+                {userForeignAssetBalances && userForeignAssetBalances?.map((userFABalance:any)=>{
+                  return (
+                    <Select.Option key={userFABalance.symbol} value={userFABalance.assetId}>
+                      <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsToken(false)}}>
+                        <Col span={6}>
+                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+userFABalance.symbol+".png"}/>
+                        </Col>
+                        <Col span={16}>
+                          {userFABalance.symbol}
+                        </Col>
+                      </Row>
+                    </Select.Option>
+                  )
+                  }
                 )}
               </Select>
             </Form.Item>
           </Col>
-          <Col span={16}>
-            <Form.Item label="Amount to Send">
-              <Row align={'middle'} justify={'space-between'}>
-                <Col span={24}>
-                  <InputNumber style={{width:'200px'}} value={amountToSend} onChange={(value:any)=>setAmountToSend(value)}/>
-                </Col>
-              </Row>
+          <Col span={16} style={{marginTop:'-12px'}}>
+            <Form.Item label="Token Amount to Send">
+              <Input value={amountToSend} onChange={(e:any)=>setAmountToSend(e.target.value)}/>
               <Col span={24}>
-                <a onClick={()=>setAmountToSend(selectedTokenBalance.free/Math.pow(10,selectedTokenBalance.decimals))} style={{marginTop:'0px', marginBottom:'0px'}}>{selectedTokenBalance && <>Max ({selectedTokenBalance.free/Math.pow(10,selectedTokenBalance.decimals)} {selectedTokenBalance.token})</>}</a>
+                <a onClick={()=>setAmountToSend(selectedTokenBalance.free/Math.pow(10,selectedTokenBalance.decimals))} style={{marginTop:'0px', marginBottom:'0px'}}>{selectedTokenBalance && <>Max ({selectedTokenBalance.free/Math.pow(10,selectedTokenBalance.decimals)} {isToken?selectedTokenBalance.token:selectedTokenBalance.symbol})</>}</a>
                 <br/>
               </Col>
             </Form.Item>
           </Col>
-          <Col span={7}>
-            <p style={{marginBottom:'0px', marginTop:'0px', fontSize:'13px'}}>
-              Est. Fee: 0.0153 INTR (Bring your own fee: coming soon!)
-            </p>
+          <Col span={7} style={{marginTop:'-12px'}}>
+            <Form.Item label="Token to Pay Fee">
+              <Select 
+                value={tokenToPayFees} 
+                onChange={(value)=>{
+                  setTokenToPayFees(value)
+                }}>
+                <Select.Option value="choose">Choose Token</Select.Option>
+                {availableAssets && availableAssets?.tokenSymbol?.map((token:string)=>{
+                  return (
+                    token==="INTR" &&
+                    <Select.Option key={token} value={token}>
+                      <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsFeeWithToken(true)}}>
+                        <Col span={6}>
+                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+token+".png"}/>
+                        </Col>
+                        <Col span={16}>
+                          {token}
+                        </Col>
+                      </Row>
+                    </Select.Option>
+                  )
+                  }
+                )}
+                {userForeignAssetBalances && userForeignAssetBalances?.map((userFABalance:any)=>{
+                  return (
+                    userFABalance.symbol==="USDT" &&
+                    <Select.Option key={userFABalance.symbol} value={userFABalance.assetId}>
+                      <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsFeeWithToken(false)}}>
+                        <Col span={6}>
+                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+userFABalance.symbol+".png"}/>
+                        </Col>
+                        <Col span={16}>
+                          {userFABalance.symbol}
+                        </Col>
+                      </Row>
+                    </Select.Option>
+                  )
+                  }
+                )}
+              </Select>
+              <h5 style={{marginTop:'0px'}}>Fee: {estimatedFee}</h5>
+            </Form.Item>
           </Col>
         </Row>
         <Row>
           <Col span={24}>
-            <Button onClick={handleTransfer} loading={transactionSuccess===0?true:false} block type='primary'>
+            <Button onClick={handleTransfer} loading={transactionSuccess===0 && false?true:false} block type='primary'>
               Send
             </Button>
           </Col>
