@@ -3,7 +3,7 @@ import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-d
 import { InjectedAccountWithMeta, InjectedExtension, } from '@polkadot/extension-inject/types'
 import { AnyJson } from '@polkadot/types/types';
 import {useEffect, useState } from 'react'
-import logo from './assets/images/logo.webp'
+import logo from './assets/images/logo2.png'
 import interlay from './assets/images/inetrlay.png'
 import kintsugi from './assets/images/kintsugi.svg'
 import ajuna from './assets/images/ajuna.png'
@@ -11,8 +11,8 @@ import transactionStepsData from './assets/data/transactionSteps'
 
 
 import './App.css'
-import { DeploymentUnitOutlined, AppstoreAddOutlined , CreditCardOutlined, ApiOutlined, DollarOutlined, SwapOutlined, SecurityScanOutlined, LoadingOutlined, QuestionCircleOutlined, CheckCircleOutlined, CloseCircleOutlined} from '@ant-design/icons'
-import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, InputNumber, Spin } from 'antd'
+import { ArrowRightOutlined, DeploymentUnitOutlined, AppstoreAddOutlined , CreditCardOutlined, ApiOutlined, DollarOutlined, SwapOutlined, SecurityScanOutlined, LoadingOutlined, QuestionCircleOutlined, CheckCircleOutlined, CloseCircleOutlined} from '@ant-design/icons'
+import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, InputNumber, Spin, Tooltip } from 'antd'
 const { Meta } = Card
 
 const NAME = "AHSTEST"
@@ -474,14 +474,29 @@ const App = () => {
 
   return (
     <>
-      <Row justify={'center'} style={{marginTop:'48px'}}>
+      <Row justify={'center'} align={'middle'} style={{marginTop:'48px'}}>
         <Col span={16}>
-          <Image preview={false} src={logo}/>
+          <Row align={'middle'} justify={'space-between'}>
+            <Col span={16}>
+              <Image preview={false} src={logo}/>
+            </Col>
+            <Col>
+              <Tooltip title="interlay.io">
+                <Button onClick={()=>location.href = 'https://interlay.io'} style={{marginRight:'8px'}} icon={<ArrowRightOutlined rotate={-60} />}>Home</Button>
+              </Tooltip>
+              <Tooltip title="app.interlay.io">
+                <Button onClick={()=>location.href = 'https://app.interlay.io'} style={{marginRight:'8px'}} icon={<ArrowRightOutlined rotate={-60} />}>Platform</Button>
+              </Tooltip>
+              <Tooltip title="docs.interlay.io">
+                <Button onClick={()=>location.href = 'https://docs.interlay.io'} icon={<ArrowRightOutlined rotate={-60} />}>Docs</Button> 
+              </Tooltip>
+            </Col>
+          </Row>
         </Col>
       </Row>
       <Row justify={'center'}>
         <Col span={16}>
-          <Row style={{marginTop:'12px'}}>
+          <Row style={{marginTop:'24px'}}>
             <Col span={24}>
               <Steps
                 items={[
@@ -509,7 +524,7 @@ const App = () => {
               />
             </Col>
           </Row>
-          <Row style={{minHeight:'300px', marginTop:'18px'}}>
+          <Row style={{minHeight:'300px', marginTop:'6px'}}>
             {currentStep===1 && step1}
             {currentStep===2 && step2}
             {currentStep===3 && step3}
@@ -534,8 +549,12 @@ const App = () => {
           }
         </Col>
       </Row>
-
-
+      {/* Footer */}
+      <Row justify={'center'} style={{marginTop:'36px'}}>
+        <Col span={16} style={{backgroundColor:'lightgray', color:'darkgray', padding:'4px', borderBottomLeftRadius:'8px', borderBottomRightRadius:'8px', textAlign:'center'}}>
+        © 2024 Coindelta, All Right Reserved.
+        </Col>
+      </Row>
 
       {/* MODALS for Tools */}
       {/* Balances Modal */}
