@@ -26,7 +26,7 @@ To start the project in your localhost and exploring the tools, follow the steps
 
 - Install dependencies
 
-```yarn insatll```
+```yarn install```
 
 - Start the environment
 
