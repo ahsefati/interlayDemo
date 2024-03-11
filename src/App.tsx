@@ -12,7 +12,7 @@ import transactionStepsData from './assets/data/transactionSteps'
 
 import './App.css'
 import { ArrowRightOutlined, DeploymentUnitOutlined, AppstoreAddOutlined , CreditCardOutlined, ApiOutlined, DollarOutlined, SwapOutlined, SecurityScanOutlined, LoadingOutlined, QuestionCircleOutlined, CheckCircleOutlined, CloseCircleOutlined} from '@ant-design/icons'
-import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, InputNumber, Spin, Tooltip } from 'antd'
+import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, InputNumber, Spin, Tooltip, List } from 'antd'
 const { Meta } = Card
 
 const NAME = "AHSTEST"
@@ -23,11 +23,30 @@ const RPCs: { [key: number]: string } = {
   2: 'wss://api-dev-kintsugi.interlay.io:443/parachain'
 }
 
+const WalletData = [
+  {
+    title: 'Talisman',
+    link: 'https://www.talisman.xyz/',
+    icon: 'Talisman.jpeg'
+  },
+  {
+    title: 'Nova',
+    link: 'https://novawallet.io/',
+    icon: 'Nova.jpg'
+  },
+  {
+    title: 'Polkadot.js',
+    link: 'https://polkadot.js.org/extension/',
+    icon: 'Polkadot.js.svg'
+  },
+];
+
 const delay = (ms: number) => {
   return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
 const App = () => {
+  const [isWalletInstalled, setIsWalletInstalled] = useState(true)
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedRPCId, setSelectedRPCId] = useState<number>(1000)
   const [connectedWallet, setConnectedWallet] = useState<InjectedExtension[]>()
@@ -80,21 +99,24 @@ const App = () => {
     if (!api) return
 
     (async () => {
-      const time = await api.query.timestamp.now()
       const availableAssets = await api.rpc.system.properties()
-      // console.log(availableAssets.toPrimitive())
       setAvailableAssets(availableAssets.toPrimitive())
-      
-      // console.log(time.toPrimitive())
-      // console.log(time.toPrimitive())
-      // console.log(availableAssets.toPrimitive())
     })()
 
   }, [api])
 
   const handleConnection = async () => {
     await web3Enable(NAME)
-          .then(data=>setConnectedWallet(data))
+          .then(data=>{
+            console.log(data)
+            if (data.length>0){
+              setConnectedWallet(data)
+            }else{
+              console.log("There is no wallet extensions installed.")
+              setIsWalletInstalled(false)
+              setErrorNoNext("No Wallet Installed.")
+            }
+          })
           .catch(error=>console.log(error))
 
     const allAccounts = await web3Accounts()
@@ -412,7 +434,26 @@ const App = () => {
   <Col span={24}>
     <h4 style={{color:'green'}}>&#9989; Succesfully Connected to the Parachain.</h4>
     <h3>Now, you should connect your wallet:</h3>
-    <Button onClick={handleConnection} disabled={connectedWallet?true:false} type='primary'>Connect{connectedWallet?'ed':''}</Button>
+    <Button onClick={handleConnection} disabled={isWalletInstalled?false:true} type='primary'>Connect{connectedWallet&&'ed'}{!isWalletInstalled&&'ion Failed!'}</Button>
+    {!isWalletInstalled && 
+      <>
+        <h3>You don't have any installed wallets yet. Please install one from the list below and refresh the page afterwards:</h3>
+        <List
+          style={{marginBottom:'24px'}}
+          itemLayout="horizontal"
+          dataSource={WalletData}
+          renderItem={(item, index) => (
+            <List.Item>
+              <List.Item.Meta
+                avatar={<Avatar src={"/src/assets/images/"+item.icon} />}
+                title={<a target='_blank' href={item.link}>{item.title}</a>}
+                description={item.link}
+              />
+            </List.Item>
+          )}
+        />
+      </>
+    }
     {connectedWallet && <h4 style={{color:'green'}}>&#9989; Connected Wallet: {connectedWallet[0].name.toUpperCase()}</h4>}
     {connectedWallet && <h3>Now, please select your desired account:</h3>}
     {connectedWallet &&
