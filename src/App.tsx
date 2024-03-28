@@ -1,7 +1,6 @@
 import {WsProvider, ApiPromise} from '@polkadot/api'
 import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp'
 import { InjectedAccountWithMeta, InjectedExtension, } from '@polkadot/extension-inject/types'
-import { AnyJson } from '@polkadot/types/types';
 import {useEffect, useState } from 'react'
 import logo from './assets/images/logo2.png'
 import interlay from './assets/images/inetrlay.png'
@@ -12,7 +11,7 @@ import transactionStepsData from './assets/data/transactionSteps'
 
 import './App.css'
 import { ArrowRightOutlined, DeploymentUnitOutlined, AppstoreAddOutlined , CreditCardOutlined, ApiOutlined, DollarOutlined, SwapOutlined, SecurityScanOutlined, LoadingOutlined, QuestionCircleOutlined, CheckCircleOutlined, CloseCircleOutlined} from '@ant-design/icons'
-import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, InputNumber, Spin, Tooltip, List } from 'antd'
+import { Button, Col, Image, Row, Steps, Card, Avatar, Select, Modal, Form, Input, Spin, Tooltip, List } from 'antd'
 const { Meta } = Card
 
 const NAME = "AHSTEST"
@@ -70,7 +69,6 @@ const App = () => {
   const [selectedTokenBalance, setSelectedTokenBalance] = useState<any>()
   const [estimatedFee, setEstimatedFee] = useState<any>()
   const [tokenToPayFees, setTokenToPayFees] = useState<any>('INTR')
-  const [selectedTokenToPayFeesBalance, setSelectedTokenToPayFeesBalance] = useState<any>()
   const [amountToSend, setAmountToSend] = useState(0)
   const [addressToSend, setAddressToSend] = useState('')
   // Transaction
@@ -137,8 +135,8 @@ const App = () => {
   const handleAddressValidation = async () => {
     if (!api) return
     await api.query.tokens.accounts(selectedAccount?.address, {Token: 'IBTC'})
-      .then((data)=>{setErrorNoNext('success')})
-      .catch((error)=>{setErrorNoNext('Address is not valid for this parachain. Please choose another account!')})
+      .then(()=>{setErrorNoNext('success')})
+      .catch(()=>{setErrorNoNext('Address is not valid for this parachain. Please choose another account!')})
   }
 
   useEffect(()=>{
@@ -278,10 +276,10 @@ const App = () => {
 
     if (isToken){
       if(isFeeWithToken){
-        const _ = await api?.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain)
-                      .signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+        await api?.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain)
+                      .signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch(()=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
       }else{
-        const _ = await api?.tx.multiTransactionPayment.withFeeSwapPath(
+        await api?.tx.multiTransactionPayment.withFeeSwapPath(
           [
             {ForeignAsset: parseInt(tokenToPayFees)}, // paying with USDT
             {Token: 'INTR'} // swapping to INTR
@@ -289,14 +287,14 @@ const App = () => {
           412, // max amount of USDT to swap
           // transferring DOT on Interlay and paying tx fees in USDT
           api.tx.tokens.transfer(addressToSend, { Token: tokenToSend }, amountToSendMain)
-        ).signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+        ).signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch(()=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
       }
     }else{
       if (isFeeWithToken){
-        const _ = await api?.tx.tokens.transfer(addressToSend, { ForeignAsset: tokenToSend }, amountToSendMain)
-                      .signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+        await api?.tx.tokens.transfer(addressToSend, { ForeignAsset: tokenToSend }, amountToSendMain)
+                      .signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch(()=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
       }else{
-        const _ = await api?.tx.multiTransactionPayment.withFeeSwapPath(
+        await api?.tx.multiTransactionPayment.withFeeSwapPath(
           [
             {ForeignAsset: parseInt(tokenToPayFees)}, // paying with USDT
             {Token: 'INTR'} // swapping to INTR
@@ -304,7 +302,7 @@ const App = () => {
           412, // max amount of USDT to swap
           // transferring DOT on Interlay and paying tx fees in USDT
           api.tx.tokens.transfer(addressToSend, { ForeignAsset: tokenToSend}, amountToSendMain)
-        ).signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch((error)=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
+        ).signAndSend(SENDER, { signer: injector.signer }, (result:any)=>{setTransactionResult(result.toHuman())}).catch(()=>{setCurrentTransactionStep(1001); setTransactionSuccess(-10)})
       }
     }
 
@@ -442,7 +440,7 @@ const App = () => {
           style={{marginBottom:'24px'}}
           itemLayout="horizontal"
           dataSource={WalletData}
-          renderItem={(item, index) => (
+          renderItem={(item, _) => (
             <List.Item>
               <List.Item.Meta
                 avatar={<Avatar src={"/src/assets/images/"+item.icon} />}
