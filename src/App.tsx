@@ -2,10 +2,10 @@ import {WsProvider, ApiPromise} from '@polkadot/api'
 import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp'
 import { InjectedAccountWithMeta, InjectedExtension, } from '@polkadot/extension-inject/types'
 import {useEffect, useState } from 'react'
-import logo from './assets/images/logo2.png'
-import interlay from './assets/images/inetrlay.png'
-import kintsugi from './assets/images/kintsugi.svg'
-import ajuna from './assets/images/ajuna.png'
+import logo from '/images/logo2.png'
+import interlay from '/images/inetrlay.png'
+import kintsugi from '/images/kintsugi.svg'
+import ajuna from '/images/ajuna.png'
 import transactionStepsData from './assets/data/transactionSteps'
 
 
@@ -443,7 +443,7 @@ const App = () => {
           renderItem={(item, _) => (
             <List.Item>
               <List.Item.Meta
-                avatar={<Avatar src={"./src/assets/images/"+item.icon} />}
+                avatar={<Avatar src={"/images/"+item.icon} />}
                 title={<a target='_blank' href={item.link}>{item.title}</a>}
                 description={item.link}
               />
@@ -617,7 +617,7 @@ const App = () => {
                 <Col key={userBalance.token} className='balanceToHover' style={{marginBottom:'18px'}} span={12}>
                   <Row justify={'space-between'} align={'top'}>
                     <Col span={2}>
-                      <Image preview={false} src={"/src/assets/images/"+userBalance.token+".png"} style={{borderRadius:'50%'}} height={'60px'} width={'60px'}/>
+                      <Image preview={false} src={"/images/"+userBalance.token+".png"} style={{borderRadius:'50%'}} height={'60px'} width={'60px'}/>
                     </Col>
                     <Col span={16} style={{marginLeft:'12px'}}>
                       <h2 style={{marginBottom:'-16px', marginTop:'-5px'}}>{userBalance.token}</h2>
@@ -639,7 +639,7 @@ const App = () => {
                 <Col key={userFABalance.assetId} className='balanceToHover' style={{marginBottom:'18px'}} span={12}>
                   <Row justify={'space-between'} align={'top'}>
                     <Col span={2}>
-                      <Image preview={false} src={"/src/assets/images/"+userFABalance.symbol+".png"} style={{borderRadius:'50%'}} height={'60px'} width={'60px'}/>
+                      <Image preview={false} src={"/images/"+userFABalance.symbol+".png"} style={{borderRadius:'50%'}} height={'60px'} width={'60px'}/>
                     </Col>
                     <Col span={16} style={{marginLeft:'12px'}}>
                       <h2 style={{marginBottom:'-16px', marginTop:'-5px'}}>{userFABalance.symbol}</h2>
@@ -692,7 +692,7 @@ const App = () => {
                     <Select.Option key={token} value={token}>
                       <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsToken(true)}}>
                         <Col span={6}>
-                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+token+".png"}/>
+                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/images/"+token+".png"}/>
                         </Col>
                         <Col span={16}>
                           {token}
@@ -707,7 +707,7 @@ const App = () => {
                     <Select.Option key={userFABalance.symbol} value={userFABalance.assetId}>
                       <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsToken(false)}}>
                         <Col span={6}>
-                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+userFABalance.symbol+".png"}/>
+                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/images/"+userFABalance.symbol+".png"}/>
                         </Col>
                         <Col span={16}>
                           {userFABalance.symbol}
@@ -743,7 +743,7 @@ const App = () => {
                     <Select.Option key={token} value={token}>
                       <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsFeeWithToken(true)}}>
                         <Col span={6}>
-                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+token+".png"}/>
+                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/images/"+token+".png"}/>
                         </Col>
                         <Col span={16}>
                           {token}
@@ -759,7 +759,7 @@ const App = () => {
                     <Select.Option key={userFABalance.symbol} value={userFABalance.assetId}>
                       <Row justify={'space-between'} align={'middle'} onClick={()=>{setIsFeeWithToken(false)}}>
                         <Col span={6}>
-                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/src/assets/images/"+userFABalance.symbol+".png"}/>
+                          <Image preview={false} height={'25px'} style={{borderRadius:'50%', marginBottom:'4px'}} src={"/images/"+userFABalance.symbol+".png"}/>
                         </Col>
                         <Col span={16}>
                           {userFABalance.symbol}
