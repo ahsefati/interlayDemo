@@ -324,7 +324,7 @@ const App = () => {
         setBlockHash(_blockHash)
         setBlockNumber(_blockNumber)
         setCurrentTransactionStep(2)
-        await delay(2500)
+        await delay(1500)
       }
       if (transactionResult.events.length === 4){
         if (transactionResult.events[3]?.event?.method === "ExtrinsicFailed"){
@@ -336,9 +336,9 @@ const App = () => {
           // transaction has already been verified as completed?
           if (transactionSuccess!==1){
             setCurrentTransactionStep(3)
-            await delay(2500)
+            await delay(1500)
             setCurrentTransactionStep(4)
-            await delay(2500)
+            await delay(1500)
             setCurrentTransactionStep(5)
             setTransactionSuccess(1)
           }
@@ -348,9 +348,9 @@ const App = () => {
         if (transactionResult.events[7]?.event?.method === "ExtrinsicSuccess"){
           if (transactionSuccess!==1){
             setCurrentTransactionStep(3)
-            await delay(2500)
+            await delay(1500)
             setCurrentTransactionStep(4)
-            await delay(2500)
+            await delay(1500)
             setCurrentTransactionStep(5)
             setTransactionSuccess(1)
           }

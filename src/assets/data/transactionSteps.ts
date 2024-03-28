@@ -5,7 +5,7 @@ const transactionStepsData = [
     },
     {
         "title": "Paying Network Fee",
-        "description": "Before finalizing the transfer, network fee (~0.0153 INTR) is being paid to the chain validators."
+        "description": "Before finalizing the transfer, network fee is being paid to the chain validators."
     },
     {
         "title": "Withdrawing the Amount",
