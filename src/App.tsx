@@ -443,7 +443,7 @@ const App = () => {
           renderItem={(item, _) => (
             <List.Item>
               <List.Item.Meta
-                avatar={<Avatar src={"/src/assets/images/"+item.icon} />}
+                avatar={<Avatar src={"./src/assets/images/"+item.icon} />}
                 title={<a target='_blank' href={item.link}>{item.title}</a>}
                 description={item.link}
               />
